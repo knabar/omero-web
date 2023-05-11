@@ -21,6 +21,7 @@
 
 from django.views.generic import View
 from django.middleware import csrf
+from django.http import HttpResponseForbidden
 from django.utils.decorators import method_decorator
 from django.urls import reverse
 from . import api_settings
@@ -31,15 +32,17 @@ import json
 from .api_query import query_objects, get_child_counts, get_wellsample_indices
 from omero_marshal import get_encoder, get_decoder, OME_SCHEMA_URL
 from omero import ValidationException
-from omeroweb.connector import Server
+from omeroweb.connector import Connector, Server
 from .api_exceptions import (
     BadRequestError,
     CreatedObject,
     MethodNotSupportedError,
     NotFoundError,
 )
+from omeroweb.decorators import get_client_ip
 from omeroweb.api.decorators import login_required, json_response
 from omeroweb.webgateway.util import getIntOrDefault
+from omeroweb.webgateway.views import LoginView
 
 
 def build_url(request, name, api_version, **kwargs):
@@ -112,6 +115,18 @@ def api_servers(request, api_version, **kwargs):
             s["server"] = obj.server
         servers.append(s)
     return {"data": servers}
+
+
+def api_session_info(request, api_version, **kwargs):
+    """Get information about current session."""
+    connector = Connector.from_session(request)
+    # Do not allow retrieval of the event context of the public user
+    if not connector or connector.is_public:
+        return HttpResponseForbidden()
+    useragent = 'OMERO.web'
+    userip = get_client_ip(request)
+    conn = connector.join_connection(useragent, userip)
+    return LoginView().handle_logged_in(request, conn, connector)
 
 
 class ApiView(View):

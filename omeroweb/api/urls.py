@@ -49,6 +49,13 @@ api_servers = url(
 GET list of available OMERO servers to login to.
 """
 
+api_session_info = url(
+    r"^v(?P<api_version>%s)/sessioninfo/$" % versions, views.api_session_info, name="api_session_info"
+)
+"""
+GET information about current session.
+"""
+
 api_login = url(
     r"^v(?P<api_version>%s)/login/$" % versions, LoginView.as_view(), name="api_login"
 )
@@ -403,6 +410,7 @@ urlpatterns = [
     api_base,
     api_token,
     api_servers,
+    api_session_info,
     api_login,
     api_save,
     api_projects,
