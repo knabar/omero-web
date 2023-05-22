@@ -50,7 +50,7 @@ GET list of available OMERO servers to login to.
 """
 
 api_session_info = url(
-    r"^v(?P<api_version>%s)/sessioninfo/$" % versions, views.api_session_info, name="api_session_info"
+    r"^v(?P<api_version>%s)/whoami/$" % versions, views.api_session_info, name="api_session_info"
 )
 """
 GET information about current session.
