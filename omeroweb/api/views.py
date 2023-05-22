@@ -21,7 +21,7 @@
 
 from django.views.generic import View
 from django.middleware import csrf
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.utils.decorators import method_decorator
 from django.urls import reverse
 from . import api_settings
