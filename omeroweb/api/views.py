@@ -42,7 +42,6 @@ from .api_exceptions import (
 from omeroweb.decorators import get_client_ip
 from omeroweb.api.decorators import login_required, json_response
 from omeroweb.webgateway.util import getIntOrDefault
-from omeroweb.webgateway.views import LoginView
 
 
 def build_url(request, name, api_version, **kwargs):
@@ -126,7 +125,21 @@ def api_session_info(request, api_version, **kwargs):
     useragent = 'OMERO.web'
     userip = get_client_ip(request)
     conn = connector.join_connection(useragent, userip)
-    return LoginView().handle_logged_in(request, conn, connector)
+    c = conn.getEventContext()
+    ctx = {
+        a: getattr(c, a)
+        for a in [
+            "userId",
+            "userName",
+            "groupId",
+            "groupName",
+            "isAdmin",
+            "memberOfGroups",
+            "leaderOfGroups",
+        ]
+        if hasattr(c, a)
+    }
+    return JsonResponse({"success": True, "eventContext": ctx})
 
 
 class ApiView(View):
