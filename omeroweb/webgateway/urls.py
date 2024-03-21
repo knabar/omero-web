@@ -415,6 +415,13 @@ Returns E.g
             pixel_range, rdefs, split_channel, size etc
 """
 
+imageData_json_original = re_path(
+    r"^imgDataOriginal/(?P<iid>[0-9]+)/(?:(?P<key>[^/]+)/)?$",
+    views.imageData_json_original,
+    name="webgateway_imageData_json_original",
+)
+
+
 wellData_json = re_path(
     r"^wellData/(?P<wid>[0-9]+)/$", views.wellData_json, name="webgateway_wellData_json"
 )
@@ -628,6 +635,7 @@ urlpatterns = [
     webgateway_listwellimages_json,
     webgateway_plategrid_json,
     imageData_json,
+    imageData_json_original,
     wellData_json,
     webgateway_search_json,
     get_rois_json,

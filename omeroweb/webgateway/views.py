@@ -47,7 +47,7 @@ from omero.constants.namespaces import NSBULKANNOTATIONS
 from .util import points_string_to_XY_list, xy_list_to_bbox
 from .plategrid import PlateGrid
 from omeroweb.version import omeroweb_buildyear as build_year
-from .marshal import imageMarshal, shapeMarshal, rgb_int2rgba
+from .marshal import imageMarshal, imageMarshalOriginal, shapeMarshal, rgb_int2rgba
 from django.templatetags.static import static
 from django.views.generic import View
 from django.shortcuts import render
@@ -1609,6 +1609,34 @@ def imageData_json(request, conn=None, _internal=False, **kwargs):
     if request.GET.get("getDefaults") == "true":
         image.resetDefaults(save=False)
     rv = imageMarshal(image, key=key, request=request)
+    return rv
+
+
+@login_required()
+@jsonp
+def imageData_json_original(request, conn=None, _internal=False, **kwargs):
+    """
+    Get a dict with image information
+    TODO: cache
+
+    @param request:     http request
+    @param conn:        L{omero.gateway.BlitzGateway}
+    @param _internal:   TODO: ?
+    @return:            Dict
+    """
+
+    iid = kwargs["iid"]
+    key = kwargs.get("key", None)
+    image = conn.getObject("Image", iid)
+    if image is None:
+        if is_public_user(request):
+            # 403 - Should try logging in
+            return HttpResponseForbidden()
+        else:
+            return HttpResponseNotFound("Image:%s not found" % iid)
+    if request.GET.get("getDefaults") == "true":
+        image.resetDefaults(save=False)
+    rv = imageMarshalOriginal(image, key=key, request=request)
     return rv
 
 
