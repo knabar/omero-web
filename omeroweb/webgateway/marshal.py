@@ -578,3 +578,174 @@ def graphResponseMarshal(conn, rsp):
             rv["unlinkedChildren"][otype + "s"] = objs
 
     return rv
+
+
+def imageMarshalOriginal(image, key=None, request=None):
+    """
+    return a dict with pretty much everything we know and care about an image,
+    all wrapped in a pretty structure.
+
+    @param image:   L{omero.gateway.ImageWrapper}
+    @param key:     key of specific attributes to select
+    @return:        Dict
+    """
+
+    image.loadRenderOptions()
+    pr = image.getProject()
+    ds = None
+    wellsample = None
+    well = None
+    try:
+        # Replicating the functionality of the deprecated
+        # ImageWrapper.getDataset() with shares in mind.
+        # -- Tue Sep  6 10:48:47 BST 2011 (See #6660)
+        parents = image.listParents()
+        if parents is not None:
+            datasets = [p for p in parents if p.OMERO_CLASS == "Dataset"]
+            well_smpls = [p for p in parents if p.OMERO_CLASS == "WellSample"]
+            if len(datasets) == 1:
+                ds = datasets[0]
+            if len(well_smpls) == 1:
+                if well_smpls[0].well is not None:
+                    well = well_smpls[0].well
+    except omero.SecurityViolation as e:
+        # We're in a share so the Image's parent Dataset cannot be loaded
+        # or some other permissions related issue has tripped us up.
+        logger.warn(
+            "Security violation while retrieving Dataset when "
+            "marshaling image metadata: %s" % e.message
+        )
+
+    rv = {
+        "id": image.id,
+        "meta": {
+            "imageName": image.name or "",
+            "imageDescription": image.description or "",
+            "imageAuthor": image.getAuthor(),
+            "projectName": pr and pr.name or "Multiple",
+            "projectId": pr and pr.id or None,
+            "projectDescription": pr and pr.description or "",
+            "datasetName": ds and ds.name or "Multiple",
+            "datasetId": ds and ds.id or None,
+            "datasetDescription": ds and ds.description or "",
+            "wellSampleId": wellsample and wellsample.id or "",
+            "wellId": well and well.id.val or "",
+            "imageTimestamp": time.mktime(image.getDate().timetuple()),
+            "imageId": image.id,
+            "pixelsType": image.getPixelsType(),
+        },
+        "perms": {
+            "canAnnotate": image.canAnnotate(),
+            "canEdit": image.canEdit(),
+            "canDelete": image.canDelete(),
+            "canLink": image.canLink(),
+        },
+    }
+    try:
+        reOK = image._prepareRenderingEngine()
+        if not reOK:
+            logger.debug("Failed to prepare Rendering Engine for imageMarshal")
+            return rv
+    except omero.ConcurrencyException as ce:
+        backOff = ce.backOff
+        rv = {"ConcurrencyException": {"backOff": backOff}}
+        return rv
+    except Exception as ex:  # Handle everything else.
+        rv["Exception"] = ex.message
+        logger.error(traceback.format_exc())
+        return rv  # Return what we have already, in case it's useful
+
+    # big images
+    levels = image._re.getResolutionLevels()
+    tiles = levels > 1
+    rv["tiles"] = tiles
+    if tiles:
+        width, height = image._re.getTileSize()
+        zoomLevelScaling = image.getZoomLevelScaling()
+
+        rv.update({"tile_size": {"width": width, "height": height}, "levels": levels})
+        if zoomLevelScaling is not None:
+            rv["zoomLevelScaling"] = zoomLevelScaling
+
+    nominalMagnification = (
+        image.getObjectiveSettings() is not None
+        and image.getObjectiveSettings().getObjective().getNominalMagnification()
+        or None
+    )
+
+    try:
+        server_settings = request.session.get("server_settings", {}).get("viewer", {})
+    except Exception:
+        server_settings = {}
+    init_zoom = server_settings.get("initial_zoom_level", 0)
+    if init_zoom < 0:
+        init_zoom = levels + init_zoom
+
+    interpolate = server_settings.get("interpolate_pixels", True)
+
+    try:
+
+        def pixel_size_in_microns(method):
+            try:
+                size = method("MICROMETER")
+                return size.getValue() if size else None
+            except Exception:
+                logger.debug(
+                    "Unable to convert physical pixel size to microns", exc_info=True
+                )
+                return None
+
+        rv.update(
+            {
+                "interpolate": interpolate,
+                "size": {
+                    "width": image.getSizeX(),
+                    "height": image.getSizeY(),
+                    "z": image.getSizeZ(),
+                    "t": image.getSizeT(),
+                    "c": image.getSizeC(),
+                },
+                "pixel_size": {
+                    "x": pixel_size_in_microns(image.getPixelSizeX),
+                    "y": pixel_size_in_microns(image.getPixelSizeY),
+                    "z": pixel_size_in_microns(image.getPixelSizeZ),
+                },
+            }
+        )
+        if init_zoom is not None:
+            rv["init_zoom"] = init_zoom
+        if nominalMagnification is not None:
+            rv.update({"nominalMagnification": nominalMagnification})
+        try:
+            rv["pixel_range"] = image.getPixelRange()
+            rv["channels"] = [channelMarshal(x) for x in image.getChannels()]
+            rv["split_channel"] = image.splitChannelDims()
+            rv["rdefs"] = {
+                "model": (image.isGreyscaleRenderingModel() and "greyscale" or "color"),
+                "projection": image.getProjection(),
+                "defaultZ": image._re.getDefaultZ(),
+                "defaultT": image._re.getDefaultT(),
+                "invertAxis": image.isInvertedAxis(),
+            }
+        except TypeError:
+            # Will happen if an image has bad or missing pixel data
+            logger.error("imageMarshal", exc_info=True)
+            rv["pixel_range"] = (0, 0)
+            rv["channels"] = ()
+            rv["split_channel"] = ()
+            rv["rdefs"] = {
+                "model": "color",
+                "projection": image.getProjection(),
+                "defaultZ": 0,
+                "defaultT": 0,
+                "invertAxis": image.isInvertedAxis(),
+            }
+    except AttributeError:
+        rv = None
+        raise
+    if key is not None and rv is not None:
+        for k in key.split("."):
+            rv = rv.get(k, {})
+        if rv == {}:
+            rv = None
+    return rv
