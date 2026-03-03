@@ -1078,6 +1078,9 @@ def _marshal_plate_acquisition(conn, row):
         start_time = datetime.utcfromtimestamp(unwrap(start_time) / 1000.0)
         end_time = datetime.utcfromtimestamp(unwrap(end_time) / 1000.0)
         plate_acquisition["name"] = "%s - %s" % (start_time, end_time)
+    elif start_time is not None:
+        start_time = datetime.utcfromtimestamp(unwrap(start_time) / 1000.0)
+        plate_acquisition["name"] = "%s" % start_time
     else:
         plate_acquisition["name"] = "Run %d" % unwrap(pa_id)
 
