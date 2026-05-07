@@ -442,24 +442,24 @@
     <img title="Close" src="{% static 'webgateway/img/close.gif' %}" />
 </div>
 
-<!-- This is HIDDEN here, but cloned into the Fileset Info panel when shown -->
-<div id="externalInfo" class="debug" style="display: none; margin-top: 20px; font-size: 13px;">
+<!-- This is hidden initially -->
+<div id="externalInfo" style="display: none; margin-top: 15px; font-size: 13px;">
 <!-- This will return None if obj.getExternalInfo method doesn't exist (omero-py 5.19.6 and earlier) -->
 {% with extinfo=obj.getExternalInfo %}
   {% if extinfo %}
-    <h3>External Info (ID: {{ extinfo.id.val }})</h3>
 
-    <!-- slice 2: to remove "s3" and replace with https -->
-    <a href="https://biongff.github.io/biongff-viewer/?source=https{{ extinfo.lsid.val|slice:"2:" }}" target="_blank" 
-       style="font-size: 13px; text-decoration: underline; display: inline-block;">
-      Open with BioNGFF viewer
-    </a>
-
-    <ul style="background: white; margin: 5px 0; padding: 7px; border: 1px solid rgb(221, 221, 221); overflow: auto;">
-        <li>lsid: <strong>{{ extinfo.lsid.val }}</strong></li>
-        <li>entityType: <strong>{{ extinfo.entityType.val }}</strong></li>
-        <li>entityId: <strong>{{ extinfo.entityId.val }}</strong></li>
-    </ul>
+    <div style="background: white; padding: 7px; border: 1px solid rgb(221, 221, 221); overflow: auto; border-radius: 4px;">
+      <h3>Zarr Info</h3>  
+      <div style="margin: 8px 0; word-wrap: break-word"><strong>{{ extinfo.lsid.val }}</strong></div>
+      <details>
+        <summary>Details</summary>
+        <ul style="margin: 5px">
+          <li>externalInfo ID: <strong>{{ extinfo.id.val }}</strong></li>
+          <li>entityType: <strong>{{ extinfo.entityType.val }}</strong></li>
+          <li>entityId: <strong>{{ extinfo.entityId.val }}</strong></li>
+        </ul>
+      </details>
+    </div>
   {% endif %}
 {% endwith %}
 </div>
