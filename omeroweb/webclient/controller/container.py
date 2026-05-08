@@ -199,6 +199,8 @@ class BaseContainer(BaseController):
         if obj is None:
             return None
         extinfo = obj.getDetails().getExternalInfo()
+        if extinfo is None:
+            return None
         return {
             "id": extinfo.id,
             "lsid": extinfo.lsid,
