@@ -199,10 +199,12 @@ class BaseContainer(BaseController):
         if obj is None:
             return None
         extinfo = obj.getDetails().getExternalInfo()
-        return {"id": extinfo.id,
-                "lsid": extinfo.lsid,
-                "entityType": extinfo.entityType,
-                "entityId": extinfo.entityId}
+        return {
+            "id": extinfo.id,
+            "lsid": extinfo.lsid,
+            "entityType": extinfo.entityType,
+            "entityId": extinfo.entityId,
+        }
 
     def getWellSampleImage(self):
         """Returns Image if Well is not None
