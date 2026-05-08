@@ -383,7 +383,7 @@
     {% endif %}
 
     <!-- External Info (Zarr url)-->
-    {% with extinfo=obj.getExternalInfo %}
+    {% with extinfo=manager.external_info %}
       {% if extinfo %}
         <button id="show_ext_info" class="btn silver btn_extinfo" title="Zarr url" >
           <span style="width: 25px; margin: 3px 2px 1px 2px; background: transparent; box-shadow: none; font-size: 11px; padding: 0px;">
@@ -445,18 +445,18 @@
 <!-- This is hidden initially -->
 <div id="externalInfo" style="display: none; margin-top: 15px; font-size: 13px;">
 <!-- This will return None if obj.getExternalInfo method doesn't exist (omero-py 5.19.6 and earlier) -->
-{% with extinfo=obj.getExternalInfo %}
+{% with extinfo=manager.external_info %}
   {% if extinfo %}
 
     <div style="background: white; padding: 7px; border: 1px solid rgb(221, 221, 221); overflow: auto; border-radius: 4px;">
       <h3>Zarr Info</h3>  
-      <div style="margin: 8px 0; word-wrap: break-word"><strong>{{ extinfo.lsid.val }}</strong></div>
+      <div style="margin: 8px 0; word-wrap: break-word"><strong>{{ extinfo.lsid }}</strong></div>
       <details>
         <summary>Details</summary>
         <ul style="margin: 5px">
-          <li>externalInfo ID: <strong>{{ extinfo.id.val }}</strong></li>
-          <li>entityType: <strong>{{ extinfo.entityType.val }}</strong></li>
-          <li>entityId: <strong>{{ extinfo.entityId.val }}</strong></li>
+          <li>externalInfo ID: <strong>{{ extinfo.id }}</strong></li>
+          <li>entityType: <strong>{{ extinfo.entityType }}</strong></li>
+          <li>entityId: <strong>{{ extinfo.entityId }}</strong></li>
         </ul>
       </details>
     </div>
