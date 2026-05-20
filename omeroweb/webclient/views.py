@@ -3975,7 +3975,7 @@ def activities(request, conn=None, **kwargs):
                 new_errors = True
         jobs.append(rv[key])
 
-    jobs.sort(key=lambda x: x["start_time"], reverse=True)
+    jobs.sort(key=lambda x: str(x["start_time"]), reverse=True)
     context = {
         "sizeOfJobs": len(request.session["callback"]),
         "jobs": jobs,
