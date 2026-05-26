@@ -1238,8 +1238,16 @@ def _marshal_tag(conn, row):
     @type row L{list}
 
     """
-    tag_id, text_value, description, owner_id, permissions, \
-        namespace, tag_child_count, image_child_count = row
+    (
+        tag_id,
+        text_value,
+        description,
+        owner_id,
+        permissions,
+        namespace,
+        tag_child_count,
+        image_child_count,
+    ) = row
 
     tag = dict()
     tag["id"] = unwrap(tag_id)
